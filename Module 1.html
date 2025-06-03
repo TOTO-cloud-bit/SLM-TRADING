@@ -1,0 +1,1256 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SLM TRADE - Bot de Trading Professionnel</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg-primary: #0a0b0d;
+            --bg-secondary: #1a1d21;
+            --bg-tertiary: #2a2d33;
+            --accent-green: #00d4aa;
+            --accent-red: #ff6b6b;
+            --accent-blue: #4f46e5;
+            --accent-gold: #ffd700;
+            --text-primary: #ffffff;
+            --text-secondary: #a0a3a8;
+            --text-muted: #6b7280;
+            --border-color: #374151;
+            --shadow-lg: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+            --gradient-primary: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --gradient-success: linear-gradient(135deg, #00d4aa 0%, #00b894 100%);
+            --gradient-danger: linear-gradient(135deg, #ff6b6b 0%, #e74c3c 100%);
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            overflow-x: hidden;
+        }
+
+        /* Animated Background */
+        .bg-animated {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: 
+                radial-gradient(circle at 20% 50%, rgba(120, 119, 198, 0.3) 0%, transparent 50%),
+                radial-gradient(circle at 80% 20%, rgba(255, 107, 107, 0.3) 0%, transparent 50%),
+                radial-gradient(circle at 40% 80%, rgba(0, 212, 170, 0.3) 0%, transparent 50%);
+            z-index: -1;
+            animation: backgroundFloat 10s ease-in-out infinite;
+        }
+
+        @keyframes backgroundFloat {
+            0%, 100% { transform: translateY(0px) rotate(0deg); }
+            50% { transform: translateY(-20px) rotate(1deg); }
+        }
+
+        /* Header */
+        header {
+            background: rgba(26, 29, 33, 0.9);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--border-color);
+            padding: 1rem 0;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+
+        .header-content {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 2rem;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 1.5rem;
+            font-weight: 700;
+            background: var(--gradient-primary);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .status-indicators {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+        }
+
+        .status-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            background: var(--bg-secondary);
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+
+        .status-dot.connected { background: var(--accent-green); }
+        .status-dot.disconnected { background: var(--accent-red); }
+        .status-dot.warning { background: var(--accent-gold); }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        /* Main Layout */
+        .main-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 2rem;
+            display: grid;
+            grid-template-columns: 1fr 2fr 1fr;
+            gap: 2rem;
+            min-height: calc(100vh - 120px);
+        }
+
+        /* Cards */
+        .card {
+            background: rgba(26, 29, 33, 0.8);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 1.5rem;
+            box-shadow: var(--shadow-lg);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .card:hover {
+            transform: translateY(-4px);
+            border-color: var(--accent-blue);
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .card-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        /* Configuration Panel */
+        .config-panel {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .form-label {
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: var(--text-secondary);
+        }
+
+        .form-input {
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 0.75rem 1rem;
+            color: var(--text-primary);
+            font-size: 0.875rem;
+            transition: all 0.3s ease;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: var(--accent-blue);
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+            transform: translateY(-1px);
+        }
+
+        .form-select {
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 0.75rem 1rem;
+            color: var(--text-primary);
+            font-size: 0.875rem;
+            cursor: pointer;
+        }
+
+        /* Buttons */
+        .btn {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 0.875rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            text-decoration: none;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
+            transition: left 0.5s;
+        }
+
+        .btn:hover::before {
+            left: 100%;
+        }
+
+        .btn-primary {
+            background: var(--gradient-primary);
+            color: white;
+        }
+
+        .btn-success {
+            background: var(--gradient-success);
+            color: white;
+        }
+
+        .btn-danger {
+            background: var(--gradient-danger);
+            color: white;
+        }
+
+        .btn-outline {
+            background: transparent;
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+        }
+
+        .btn:active {
+            transform: translateY(0px);
+        }
+
+        /* Trading Panel */
+        .trading-panel {
+            display: flex;
+            flex-direction: column;
+            gap: 2rem;
+        }
+
+        .trading-controls {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+        }
+
+        .quick-actions {
+            display: flex;
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        /* Chart Container */
+        .chart-container {
+            height: 400px;
+            background: var(--bg-secondary);
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.125rem;
+            color: var(--text-muted);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .chart-placeholder {
+            text-align: center;
+        }
+
+        /* Statistics */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-item {
+            background: var(--bg-tertiary);
+            padding: 1rem;
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 0.25rem;
+        }
+
+        .stat-value.positive { color: var(--accent-green); }
+        .stat-value.negative { color: var(--accent-red); }
+
+        .stat-label {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        /* Monitoring Panel */
+        .monitoring-panel {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        .alert-item {
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .alert-icon {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .alert-success { background: var(--accent-green); color: white; }
+        .alert-warning { background: var(--accent-gold); color: black; }
+        .alert-error { background: var(--accent-red); color: white; }
+
+        .alert-content {
+            flex: 1;
+        }
+
+        .alert-title {
+            font-weight: 600;
+            margin-bottom: 0.25rem;
+        }
+
+        .alert-time {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+        }
+
+        /* Activity Log */
+        .activity-log {
+            max-height: 300px;
+            overflow-y: auto;
+            background: var(--bg-tertiary);
+            border-radius: 8px;
+            padding: 1rem;
+        }
+
+        .log-entry {
+            display: flex;
+            justify-content: space-between;
+            padding: 0.5rem 0;
+            border-bottom: 1px solid var(--border-color);
+            font-size: 0.875rem;
+        }
+
+        .log-entry:last-child {
+            border-bottom: none;
+        }
+
+        .log-time {
+            color: var(--text-muted);
+            font-size: 0.75rem;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 1200px) {
+            .main-container {
+                grid-template-columns: 1fr;
+                gap: 1.5rem;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .header-content {
+                flex-direction: column;
+                gap: 1rem;
+                padding: 0 1rem;
+            }
+
+            .main-container {
+                padding: 1rem;
+            }
+
+            .trading-controls {
+                grid-template-columns: 1fr;
+            }
+
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .quick-actions {
+                flex-direction: column;
+            }
+        }
+
+        /* Loading Animation */
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255,255,255,.3);
+            border-radius: 50%;
+            border-top-color: #fff;
+            animation: spin 1s ease-in-out infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Glow Effects */
+        .glow-success {
+            box-shadow: 0 0 20px rgba(0, 212, 170, 0.3);
+        }
+
+        .glow-danger {
+            box-shadow: 0 0 20px rgba(255, 107, 107, 0.3);
+        }
+
+        /* Toggle Switch */
+        .toggle-switch {
+            position: relative;
+            width: 60px;
+            height: 34px;
+        }
+
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: var(--bg-tertiary);
+            transition: .4s;
+            border-radius: 34px;
+            border: 1px solid var(--border-color);
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 26px;
+            width: 26px;
+            left: 4px;
+            bottom: 3px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+
+        input:checked + .slider {
+            background: var(--gradient-success);
+            border-color: var(--accent-green);
+        }
+
+        input:checked + .slider:before {
+            transform: translateX(26px);
+        }
+    </style>
+</head>
+<body>
+    <div class="bg-animated"></div>
+    
+    <header>
+        <div class="header-content">
+            <div class="logo">
+                <span>⚡</span>
+                <span>SLM TRADE</span>
+            </div>
+            <div class="status-indicators">
+                <div class="status-item">
+                    <div class="status-dot connected"></div>
+                    <span>API Bybit</span>
+                </div>
+                <div class="status-item">
+                    <div class="status-dot connected"></div>
+                    <span>WebSocket</span>
+                </div>
+                <div class="status-item">
+                    <div class="status-dot warning"></div>
+                    <span>Bot: Standby</span>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main class="main-container">
+        <!-- Configuration Panel -->
+        <section class="card config-panel">
+            <div class="card-header">
+                <h2 class="card-title">⚙️ Configuration</h2>
+                <label class="toggle-switch">
+                    <input type="checkbox" id="botToggle">
+                    <span class="slider"></span>
+                </label>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Paire de Trading</label>
+                <select class="form-select" id="tradingPair">
+                    <option value="BTCUSDT">BTC/USDT</option>
+                    <option value="ETHUSDT">ETH/USDT</option>
+                    <option value="ADAUSDT">ADA/USDT</option>
+                    <option value="SOLUSDT">SOL/USDT</option>
+                    <option value="DOTUSDT">DOT/USDT</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Montant par Trade (USDT)</label>
+                <input type="number" class="form-input" id="tradeAmount" value="100" min="1" step="1">
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Stop Loss (%)</label>
+                <input type="number" class="form-input" id="stopLoss" value="2" min="0.1" step="0.1">
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Take Profit (%)</label>
+                <input type="number" class="form-input" id="takeProfit" value="3" min="0.1" step="0.1">
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Stratégie</label>
+                <select class="form-select" id="strategy">
+                    <option value="scalping">Scalping</option>
+                    <option value="swing">Swing Trading</option>
+                    <option value="grid">Grid Trading</option>
+                    <option value="dca">DCA</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Risk Management</label>
+                <select class="form-select" id="riskLevel">
+                    <option value="conservative">Conservateur</option>
+                    <option value="moderate">Modéré</option>
+                    <option value="aggressive">Agressif</option>
+                </select>
+            </div>
+
+            <button class="btn btn-primary" id="saveConfig">
+                💾 Sauvegarder Configuration
+            </button>
+
+            <button class="btn btn-outline" id="resetConfig">
+                🔄 Reset par Défaut
+            </button>
+        </section>
+
+        <!-- Trading Panel -->
+        <section class="card trading-panel">
+            <div class="card-header">
+                <h2 class="card-title">📈 Trading Dashboard</h2>
+                <div class="quick-actions">
+                    <button class="btn btn-success" id="startBot">▶️ Démarrer</button>
+                    <button class="btn btn-danger" id="stopBot">⏹️ Arrêter</button>
+                    <button class="btn btn-outline" id="pauseBot">⏸️ Pause</button>
+                </div>
+            </div>
+
+            <!-- Statistics -->
+            <div class="stats-grid">
+                <div class="stat-item">
+                    <div class="stat-value positive" id="totalProfit">+€0.00</div>
+                    <div class="stat-label">Profit Total</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value" id="totalTrades">0</div>
+                    <div class="stat-label">Trades Total</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value positive" id="winRate">0%</div>
+                    <div class="stat-label">Taux de Réussite</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value" id="currentPrice">€0.00</div>
+                    <div class="stat-label">Prix Actuel</div>
+                </div>
+            </div>
+
+            <!-- Chart -->
+            <div class="chart-container" id="tradingChart">
+                <div class="chart-placeholder">
+                    <div>📊 Graphique Trading</div>
+                    <div style="font-size: 0.875rem; margin-top: 0.5rem;">
+                        Le graphique sera intégré dans le Module 3
+                    </div>
+                </div>
+            </div>
+
+            <!-- Trading Controls -->
+            <div class="trading-controls">
+                <button class="btn btn-success" id="manualBuy">
+                    📈 Achat Manuel
+                </button>
+                <button class="btn btn-danger" id="manualSell">
+                    📉 Vente Manuel
+                </button>
+                <button class="btn btn-outline" id="closeAllPositions">
+                    🚪 Fermer Toutes Positions
+                </button>
+                <button class="btn btn-outline" id="emergencyStop">
+                    🚨 Arrêt d'Urgence
+                </button>
+            </div>
+        </section>
+
+        <!-- Monitoring Panel -->
+        <section class="card monitoring-panel">
+            <div class="card-header">
+                <h2 class="card-title">🔍 Monitoring</h2>
+                <span class="text-muted" id="lastUpdate">Dernière MAJ: --:--</span>
+            </div>
+
+            <!-- Alerts -->
+            <div class="alerts-section">
+                <h3 style="font-size: 1rem; margin-bottom: 1rem; color: var(--text-secondary);">🚨 Alertes</h3>
+                <div class="alert-item">
+                    <div class="alert-icon alert-success">✓</div>
+                    <div class="alert-content">
+                        <div class="alert-title">Bot Connecté</div>
+                        <div class="alert-time">Il y a 2 minutes</div>
+                    </div>
+                </div>
+                <div class="alert-item">
+                    <div class="alert-icon alert-warning">⚠</div>
+                    <div class="alert-content">
+                        <div class="alert-title">Volatilité Élevée</div>
+                        <div class="alert-time">Il y a 5 minutes</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Portfolio Info -->
+            <div class="portfolio-section">
+                <h3 style="font-size: 1rem; margin-bottom: 1rem; color: var(--text-secondary);">💼 Portfolio</h3>
+                <div class="stats-grid">
+                    <div class="stat-item">
+                        <div class="stat-value" id="accountBalance">€0.00</div>
+                        <div class="stat-label">Solde Compte</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value" id="openPositions">0</div>
+                        <div class="stat-label">Positions Ouvertes</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Activity Log -->
+            <div class="activity-section">
+                <h3 style="font-size: 1rem; margin-bottom: 1rem; color: var(--text-secondary);">📋 Activité Récente</h3>
+                <div class="activity-log" id="activityLog">
+                    <div class="log-entry">
+                        <span>Bot démarré</span>
+                        <span class="log-time">12:30:45</span>
+                    </div>
+                    <div class="log-entry">
+                        <span>Configuration sauvegardée</span>
+                        <span class="log-time">12:25:12</span>
+                    </div>
+                    <div class="log-entry">
+                        <span>Connexion API établie</span>
+                        <span class="log-time">12:20:33</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- API Status -->
+            <div class="api-status">
+                <button class="btn btn-outline" id="testConnection">
+                    🔗 Test Connexion API
+                </button>
+                <button class="btn btn-outline" id="refreshData">
+                    🔄 Actualiser Données
+                </button>
+            </div>
+        </section>
+    </main>
+
+    <script>
+        // Interface State Management
+        class UIManager {
+            constructor() {
+                this.botActive = false;
+                this.initializeEventListeners();
+                this.updateTimestamp();
+                setInterval(() => this.updateTimestamp(), 1000);
+            }
+
+            initializeEventListeners() {
+                // Bot Toggle
+                document.getElementById('botToggle').addEventListener('change', (e) => {
+                    this.toggleBot(e.target.checked);
+                });
+
+                // Control Buttons
+                document.getElementById('startBot').addEventListener('click', () => this.startBot());
+                document.getElementById('stopBot').addEventListener('click', () => this.stopBot());
+                document.getElementById('pauseBot').addEventListener('click', () => this.pauseBot());
+
+                // Configuration
+                document.getElementById('saveConfig').addEventListener('click', () => this.saveConfiguration());
+                document.getElementById('resetConfig').addEventListener('click', () => this.resetConfiguration());
+
+                // Manual Trading
+                document.getElementById('manualBuy').addEventListener('click', () => this.executeManualTrade('BUY'));
+                document.getElementById('manualSell').addEventListener('click', () => this.executeManualTrade('SELL'));
+
+                // Emergency Actions
+                document.getElementById('closeAllPositions').addEventListener('click', () => this.closeAllPositions());
+                document.getElementById('emergencyStop').addEventListener('click', () => this.emergencyStop());
+
+                // API Testing
+                document.getElementById('testConnection').addEventListener('click', () => this.testAPIConnection());
+                document.getElementById('refreshData').addEventListener('click', () => this.refreshData());
+            }
+
+            toggleBot(active) {
+                this.botActive = active;
+                this.updateBotStatus(active ? 'Active' : 'Standby');
+                this.logActivity(active ? 'Bot activé' : 'Bot désactivé');
+                
+                if (active) {
+                    this.showNotification('Bot démarré avec succès', 'success');
+                } else {
+                    this.showNotification('Bot arrêté', 'warning');
+                }
+            }
+
+            startBot() {
+                document.getElementById('botToggle').checked = true;
+                this.toggleBot(true);
+            }
+
+            stopBot() {
+                document.getElementById('botToggle').checked = false;
+                this.toggleBot(false);
+            }
+
+            pauseBot() {
+                this.updateBotStatus('En Pause');
+                this.logActivity('Bot mis en pause');
+                this.showNotification('Bot en pause', 'warning');
+            }
+
+            saveConfiguration() {
+                const config = {
+                    tradingPair: document.getElementById('tradingPair').value,
+                    tradeAmount: document.getElementById('tradeAmount').value,
+                    stopLoss: document.getElementById('stopLoss').value,
+                    takeProfit: document.getElementById('takeProfit').value,
+                    strategy: document.getElementById('strategy').value,
+                    riskLevel: document.getElementById('riskLevel').value
+                };
+
+                // Simulate API call with loading
+                const btn = document.getElementById('saveConfig');
+                const originalText = btn.innerHTML;
+                btn.innerHTML = '<div class="loading"></div> Sauvegarde...';
+                btn.disabled = true;
+
+                setTimeout(() => {
+                    btn.innerHTML = originalText;
+                    btn.disabled = false;
+                    this.logActivity('Configuration sauvegardée');
+                    this.showNotification('Configuration sauvegardée', 'success');
+                }, 1500);
+            }
+
+            resetConfiguration() {
+                document.getElementById('tradingPair').value = 'BTCUSDT';
+                document.getElementById('tradeAmount').value = '100';
+                document.getElementById('stopLoss').value = '2';
+                document.getElementById('takeProfit').value = '3';
+                document.getElementById('strategy').value = 'scalping';
+                document.getElementById('riskLevel').value = 'moderate';
+                
+                this.logActivity('Configuration réinitialisée');
+                this.showNotification('Configuration réinitialisée', 'success');
+            }
+
+            executeManualTrade(type) {
+                const amount = document.getElementById('tradeAmount').value;
+                const pair = document.getElementById('tradingPair').value;
+                
+                this.logActivity(`Trade manuel ${type}: ${amount} USDT sur ${pair}`);
+                this.showNotification(`Trade ${type} exécuté`, 'success');
+                
+                // Update stats (simulation)
+                this.updateStats();
+            }
+
+            closeAllPositions() {
+                this.logActivity('Fermeture de toutes les positions');
+                this.showNotification('Toutes les positions fermées', 'warning');
+                document.getElementById('openPositions').textContent = '0';
+            }
+
+            emergencyStop() {
+                document.getElementById('botToggle').checked = false;
+                this.toggleBot(false);
+                this.closeAllPositions();
+                this.showNotification('ARRÊT D\'URGENCE ACTIVÉ', 'error');
+                this.logActivity('🚨 ARRÊT D\'URGENCE');
+            }
+
+            testAPIConnection() {
+                const btn = document.getElementById('testConnection');
+                const originalText = btn.innerHTML;
+                btn.innerHTML = '<div class="loading"></div> Test...';
+                btn.disabled = true;
+
+                setTimeout(() => {
+                    btn.innerHTML = originalText;
+                    btn.disabled = false;
+                    this.logActivity('Test de connexion API réussi');
+                    this.showNotification('Connexion API OK', 'success');
+                }, 2000);
+            }
+
+            refreshData() {
+                const btn = document.getElementById('refreshData');
+                const originalText = btn.innerHTML;
+                btn.innerHTML = '<div class="loading"></div> Actualisation...';
+                btn.disabled = true;
+
+                setTimeout(() => {
+                    btn.innerHTML = originalText;
+                    btn.disabled = false;
+                    this.updateStats();
+                    this.logActivity('Données actualisées');
+                    this.showNotification('Données mises à jour', 'success');
+                }, 1500);
+            }
+
+            updateStats() {
+                // Simulate real trading data
+                const profits = [125.67, -45.23, 89.12, 234.56, -12.34];
+                const randomProfit = profits[Math.floor(Math.random() * profits.length)];
+                const totalTrades = Math.floor(Math.random() * 50) + 1;
+                const winRate = Math.floor(Math.random() * 40) + 60;
+                const currentPrice = (Math.random() * 50000 + 30000).toFixed(2);
+                const balance = (Math.random() * 5000 + 1000).toFixed(2);
+
+                document.getElementById('totalProfit').textContent = `${randomProfit >= 0 ? '+' : ''}€${randomProfit.toFixed(2)}`;
+                document.getElementById('totalProfit').className = `stat-value ${randomProfit >= 0 ? 'positive' : 'negative'}`;
+                document.getElementById('totalTrades').textContent = totalTrades;
+                document.getElementById('winRate').textContent = `${winRate}%`;
+                document.getElementById('currentPrice').textContent = `€${currentPrice}`;
+                document.getElementById('accountBalance').textContent = `€${balance}`;
+                document.getElementById('openPositions').textContent = Math.floor(Math.random() * 5);
+            }
+
+            updateBotStatus(status) {
+                const statusItems = document.querySelectorAll('.status-item');
+                const botStatus = Array.from(statusItems).find(item => item.textContent.includes('Bot:'));
+                if (botStatus) {
+                    const dot = botStatus.querySelector('.status-dot');
+                    const text = botStatus.querySelector('span');
+                    text.textContent = `Bot: ${status}`;
+                    
+                    dot.className = 'status-dot';
+                    if (status === 'Active') {
+                        dot.classList.add('connected');
+                    } else if (status === 'En Pause') {
+                        dot.classList.add('warning');
+                    } else {
+                        dot.classList.add('disconnected');
+                    }
+                }
+            }
+
+            logActivity(message) {
+                const log = document.getElementById('activityLog');
+                const time = new Date().toLocaleTimeString();
+                const entry = document.createElement('div');
+                entry.className = 'log-entry';
+                entry.innerHTML = `
+                    <span>${message}</span>
+                    <span class="log-time">${time}</span>
+                `;
+                log.insertBefore(entry, log.firstChild);
+                
+                // Keep only last 10 entries
+                while (log.children.length > 10) {
+                    log.removeChild(log.lastChild);
+                }
+            }
+
+            showNotification(message, type) {
+                // Create notification element
+                const notification = document.createElement('div');
+                notification.className = `notification ${type}`;
+                notification.innerHTML = `
+                    <div class="notification-content">
+                        <span class="notification-icon">${this.getNotificationIcon(type)}</span>
+                        <span class="notification-message">${message}</span>
+                    </div>
+                `;
+                
+                // Add notification styles
+                notification.style.cssText = `
+                    position: fixed;
+                    top: 20px;
+                    right: 20px;
+                    background: ${type === 'success' ? 'var(--gradient-success)' : 
+                                type === 'error' ? 'var(--gradient-danger)' : 
+                                'linear-gradient(135deg, #ffd700 0%, #ffed4e 100%)'};
+                    color: white;
+                    padding: 1rem 1.5rem;
+                    border-radius: 12px;
+                    box-shadow: var(--shadow-lg);
+                    z-index: 10000;
+                    animation: slideInRight 0.3s ease-out forwards;
+                    backdrop-filter: blur(10px);
+                    border: 1px solid rgba(255,255,255,0.1);
+                `;
+
+                document.body.appendChild(notification);
+
+                // Auto remove after 3 seconds
+                setTimeout(() => {
+                    notification.style.animation = 'slideOutRight 0.3s ease-out forwards';
+                    setTimeout(() => {
+                        if (notification.parentNode) {
+                            notification.parentNode.removeChild(notification);
+                        }
+                    }, 300);
+                }, 3000);
+            }
+
+            getNotificationIcon(type) {
+                switch(type) {
+                    case 'success': return '✅';
+                    case 'error': return '❌';
+                    case 'warning': return '⚠️';
+                    default: return 'ℹ️';
+                }
+            }
+
+            updateTimestamp() {
+                const now = new Date();
+                const timeString = now.toLocaleTimeString();
+                document.getElementById('lastUpdate').textContent = `Dernière MAJ: ${timeString}`;
+            }
+        }
+
+        // Add notification animations
+        const notificationStyles = document.createElement('style');
+        notificationStyles.textContent = `
+            @keyframes slideInRight {
+                from {
+                    transform: translateX(100%);
+                    opacity: 0;
+                }
+                to {
+                    transform: translateX(0);
+                    opacity: 1;
+                }
+            }
+
+            @keyframes slideOutRight {
+                from {
+                    transform: translateX(0);
+                    opacity: 1;
+                }
+                to {
+                    transform: translateX(100%);
+                    opacity: 0;
+                }
+            }
+
+            .notification-content {
+                display: flex;
+                align-items: center;
+                gap: 0.75rem;
+            }
+
+            .notification-icon {
+                font-size: 1.2rem;
+            }
+
+            .notification-message {
+                font-weight: 600;
+                font-size: 0.9rem;
+            }
+        `;
+        document.head.appendChild(notificationStyles);
+
+        // Market Data Simulator
+        class MarketSimulator {
+            constructor() {
+                this.currentPrice = 45000;
+                this.startPriceUpdates();
+            }
+
+            startPriceUpdates() {
+                setInterval(() => {
+                    // Simulate price movements
+                    const change = (Math.random() - 0.5) * 1000;
+                    this.currentPrice += change;
+                    this.currentPrice = Math.max(30000, Math.min(80000, this.currentPrice));
+                    
+                    document.getElementById('currentPrice').textContent = `€${this.currentPrice.toFixed(2)}`;
+                    
+                    // Add some visual feedback for price changes
+                    const priceElement = document.getElementById('currentPrice');
+                    priceElement.style.transform = 'scale(1.05)';
+                    priceElement.style.transition = 'transform 0.2s ease';
+                    
+                    setTimeout(() => {
+                        priceElement.style.transform = 'scale(1)';
+                    }, 200);
+                }, 5000);
+            }
+        }
+
+        // Performance Monitor
+        class PerformanceMonitor {
+            constructor() {
+                this.trades = [];
+                this.startMonitoring();
+            }
+
+            startMonitoring() {
+                // Simulate random trading activity
+                setInterval(() => {
+                    if (Math.random() > 0.7) { // 30% chance every 10 seconds
+                        this.simulateTrade();
+                    }
+                }, 10000);
+            }
+
+            simulateTrade() {
+                const trade = {
+                    type: Math.random() > 0.5 ? 'BUY' : 'SELL',
+                    amount: Math.random() * 200 + 50,
+                    profit: (Math.random() - 0.5) * 100,
+                    timestamp: new Date()
+                };
+
+                this.trades.push(trade);
+                
+                // Update UI
+                const uiManager = window.uiManager;
+                uiManager.logActivity(`Trade ${trade.type}: €${trade.profit.toFixed(2)}`);
+                
+                if (Math.abs(trade.profit) > 50) {
+                    uiManager.showNotification(
+                        `Trade ${trade.type}: ${trade.profit >= 0 ? '+' : ''}€${trade.profit.toFixed(2)}`,
+                        trade.profit >= 0 ? 'success' : 'error'
+                    );
+                }
+            }
+        }
+
+        // Advanced Chart Placeholder
+        class ChartManager {
+            constructor() {
+                this.initializeChart();
+            }
+
+            initializeChart() {
+                const chartContainer = document.getElementById('tradingChart');
+                
+                // Add some animated elements to make it look more dynamic
+                chartContainer.innerHTML = `
+                    <div class="chart-placeholder">
+                        <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1rem;">
+                            <div class="loading"></div>
+                            <span>📊 Graphique de Trading en Temps Réel</span>
+                        </div>
+                        <div style="font-size: 0.875rem; color: var(--text-muted); text-align: center;">
+                            <p>• Chandelier japonais interactif</p>
+                            <p>• Indicateurs techniques (RSI, MACD, Bollinger)</p>
+                            <p>• Volume et profondeur de marché</p>
+                            <p>• Zones de support/résistance</p>
+                            <br>
+                            <p><strong>Sera intégré dans le Module 3 - Graphiques</strong></p>
+                        </div>
+                    </div>
+                `;
+
+                // Add some visual effects
+                setInterval(() => {
+                    const placeholder = chartContainer.querySelector('.chart-placeholder');
+                    if (placeholder) {
+                        placeholder.style.background = `linear-gradient(45deg, 
+                            rgba(79, 70, 229, 0.05) 0%, 
+                            rgba(0, 212, 170, 0.05) 50%, 
+                            rgba(255, 107, 107, 0.05) 100%)`;
+                        
+                        setTimeout(() => {
+                            placeholder.style.background = '';
+                        }, 1000);
+                    }
+                }, 8000);
+            }
+        }
+
+        // Risk Management Display
+        class RiskManager {
+            constructor() {
+                this.updateRiskMetrics();
+                setInterval(() => this.updateRiskMetrics(), 30000);
+            }
+
+            updateRiskMetrics() {
+                // Simulate risk calculations
+                const drawdown = (Math.random() * 10).toFixed(1);
+                const sharpeRatio = (Math.random() * 2 + 0.5).toFixed(2);
+                const volatility = (Math.random() * 30 + 10).toFixed(1);
+
+                // Add risk metrics to monitoring panel
+                const monitoringPanel = document.querySelector('.monitoring-panel .card');
+                let riskSection = document.getElementById('riskMetrics');
+                
+                if (!riskSection) {
+                    riskSection = document.createElement('div');
+                    riskSection.id = 'riskMetrics';
+                    riskSection.innerHTML = `
+                        <h3 style="font-size: 1rem; margin: 2rem 0 1rem 0; color: var(--text-secondary);">⚠️ Gestion des Risques</h3>
+                        <div class="stats-grid">
+                            <div class="stat-item">
+                                <div class="stat-value" id="maxDrawdown">${drawdown}%</div>
+                                <div class="stat-label">Drawdown Max</div>
+                            </div>
+                            <div class="stat-item">
+                                <div class="stat-value" id="sharpeRatio">${sharpeRatio}</div>
+                                <div class="stat-label">Ratio Sharpe</div>
+                            </div>
+                        </div>
+                    `;
+                    monitoringPanel.appendChild(riskSection);
+                } else {
+                    document.getElementById('maxDrawdown').textContent = `${drawdown}%`;
+                    document.getElementById('sharpeRatio').textContent = sharpeRatio;
+                }
+            }
+        }
+
+        // Initialize Application
+        document.addEventListener('DOMContentLoaded', function() {
+            // Initialize all managers
+            window.uiManager = new UIManager();
+            window.marketSimulator = new MarketSimulator();
+            window.performanceMonitor = new PerformanceMonitor();
+            window.chartManager = new ChartManager();
+            window.riskManager = new RiskManager();
+
+            // Initial data load
+            window.uiManager.updateStats();
+            window.uiManager.logActivity('Application SLM TRADE initialisée');
+            window.uiManager.showNotification('SLM TRADE prêt à trader !', 'success');
+
+            // Add some initial activity
+            setTimeout(() => {
+                window.uiManager.logActivity('Connexion WebSocket établie');
+                window.uiManager.logActivity('Données de marché synchronisées');
+            }, 2000);
+
+            console.log('🚀 SLM TRADE Interface initialisée avec succès!');
+            console.log('📊 Modules chargés: UI, Market Simulator, Performance Monitor, Chart Manager, Risk Manager');
+        });
+
+        // Keyboard shortcuts
+        document.addEventListener('keydown', function(event) {
+            if (event.ctrlKey || event.metaKey) {
+                switch(event.key) {
+                    case 's':
+                        event.preventDefault();
+                        window.uiManager.saveConfiguration();
+                        break;
+                    case 'r':
+                        event.preventDefault();
+                        window.uiManager.refreshData();
+                        break;
+                    case ' ':
+                        event.preventDefault();
+                        const toggle = document.getElementById('botToggle');
+                        toggle.checked = !toggle.checked;
+                        window.uiManager.toggleBot(toggle.checked);
+                        break;
+                }
+            }
+
+            // Emergency stop with ESC key
+            if (event.key === 'Escape') {
+                window.uiManager.emergencyStop();
+            }
+        });
+    </script>
+</body>
+</html>
